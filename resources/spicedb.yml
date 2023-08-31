@@ -1,0 +1,78 @@
+---
+# This runs SpiceDB, using Postgres as the storage engine. SpiceDB will not have
+# any schema written to it.
+#
+# Once the database service is running, the migrate service executes, running
+# "spicedb migrate head" to migrate Postgres to the most current revision. After
+# Postgres is migrated, the migrate service will stop.
+#
+# SpiceDB settings:
+#   pre-shared key: foobar
+#   dashboard address: http://localhost:8080
+#   metrics address: http://localhost:9090
+#   grpc address: http://localhost:50051
+#
+# Postgres settings:
+#   user: postgres
+#   password: secret
+#   port: 5432
+
+version: "3"
+
+services:
+  # ballerina:
+  #   image: spicedb_proxy_ballerina_http:latest
+  #   ports:
+  #     - "9191:9191"
+  #   depends_on:
+  #     - "spicedb"
+  spicedb:
+    image: "authzed/spicedb"
+    command: "serve"
+    restart: "always"
+    ports:
+      - "8080:8080"
+      # - "9090:9090"
+      - "50051:50051"
+      - "8443:8443"
+    environment:
+      - "SPICEDB_GRPC_PRESHARED_KEY=foobar"
+      - "SPICEDB_DATASTORE_ENGINE=postgres"
+      - "SPICEDB_DATASTORE_CONN_URI=postgres://postgres:secret@database:5432/spicedb?sslmode=disable"
+      - "SPICEDB_HTTP_ENABLED=true"
+    depends_on:
+      - "migrate"
+    deploy:
+      resources:
+        limits:
+          cpus: '1000m'
+          memory: 2G
+        reservations:
+          cpus: '1000m'
+          memory: 2G
+
+  migrate:
+    image: "authzed/spicedb"
+    command: "migrate head"
+    restart: "on-failure"
+    environment:
+      - "SPICEDB_DATASTORE_ENGINE=postgres"
+      - "SPICEDB_DATASTORE_CONN_URI=postgres://postgres:secret@database:5432/spicedb?sslmode=disable"
+    depends_on:
+      - "database"
+
+  database:
+    image: "postgres"
+    ports:
+      - "5432:5432"
+    environment:
+      - "POSTGRES_PASSWORD=secret"
+      - "POSTGRES_DB=spicedb"
+    deploy:
+      resources:
+        limits:
+          cpus: '1000m'
+          memory: 2G
+        reservations:
+          cpus: '1000m'
+          memory: 2G

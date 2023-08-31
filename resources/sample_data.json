@@ -1,0 +1,13 @@
+{
+    "resource": {
+        "object_type": "permissions",
+        "object_id": "choreo/project_view"
+    },
+    "permission": "allowed",
+    "subject": {
+        "object": {
+            "object_type": "projectgroups",
+            "object_id": "DigitalOperations/Project13+Group001"
+        }
+    }
+}
